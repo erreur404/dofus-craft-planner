@@ -1,0 +1,1 @@
+recipies database from https://github.com/bot4dofus/Datafus
