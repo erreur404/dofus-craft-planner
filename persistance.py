@@ -1,5 +1,7 @@
 import logging
+import uuid
 import pandas as pd
+from math import ceil
 from os.path import exists
 
 
@@ -31,6 +33,7 @@ class Persistance:
               "item_price",
               "item_note",
               "quantity",
+              "op_id",
             ])
             self.inventory = pd.DataFrame(columns=[
               "item_name",
@@ -72,14 +75,15 @@ class Persistance:
         quantity = -quantity
         # pay tax
         self.operations = self.operations.append({
-          "buy_or_sell": op,
+          "buy_or_sell": "buy",
           "item_name": "tax",
           "item_url": "tax",
           "item_id": "tax",
           "sell_confirmed": True,
-          "item_price": ceil(int(payload["price"])*0.02),
-          "item_note": f"tax for selling {-quantity} {item["name"]} for {-price}k {note}",
+          "item_price": ceil(abs(int(price))*0.02),
+          "item_note": f"tax for selling { -quantity } { item['name'] } for { -price }k. " + note if note is not None else "",
           "quantity": 1,
+          "op_id": str(uuid.uuid4()),
         }, ignore_index=True)
       pricePerUnit = price / float(quantity)
       self.operations = self.operations.append({
@@ -91,6 +95,7 @@ class Persistance:
         "item_price": pricePerUnit,
         "item_note": note,
         "quantity": quantity,
+        "op_id": str(uuid.uuid4()),
       }, ignore_index=True)
       if len(self.inventory[self.inventory.item_id==item["id"]]) == 1:
         self.inventory.loc[self.inventory.item_id==item["id"], "quantity"] += quantity

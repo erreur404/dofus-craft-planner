@@ -10,236 +10,254 @@
   <div id="app">
     <v-app>
       <v-navigation-drawer app color="secondary">
-		<!-- -->
-	  </v-navigation-drawer>
+        <!-- -->
+      </v-navigation-drawer>
 
-	  <v-app-bar app color="primary">
-		<!-- -->
-		<v-btn color="accent" @click="triggerSave()">
-			<v-icon>mdi-disk</v-icon>
-			save
-		</v-btn>
-	  </v-app-bar>
+      <v-app-bar app color="primary">
+        <!-- -->
+        <v-btn color="accent" @click="triggerSave()">
+            <v-icon>mdi-disk</v-icon>
+            save
+        </v-btn>
+      </v-app-bar>
 
-	  <!-- Sizes your content based upon application components -->
-	  <v-main>
+      <!-- Sizes your content based upon application components -->
+      <v-main>
 
-		<!-- Provides the application the proper gutter -->
-		<v-container fluid>
-		<v-row>
-		  <!-- market -->
-		  <v-col cols="12" md="6">
-  		  <v-card>
-    		  <v-card-title>Market</v-card-title>
-    		  <v-card-text>
-    		    <v-text-field
-				  dense
-				  filled
-				  rounded
-				  solo
-				  v-model="market_search"
-				></v-text-field>
-				<v-list>
-					<v-list-item v-for="item in searchResult">
-						<v-list-item-content>
-						  <v-list-item-title>{{ item.name }}</v-list-item-title>
+        <!-- Provides the application the proper gutter -->
+        <v-container fluid>
+        <v-row>
+          <!-- market -->
+          <v-col cols="12" md="6">
+            <v-card>
+              <v-card-title>Market</v-card-title>
+              <v-card-text>
+                <v-text-field
+                  dense
+                  filled
+                  rounded
+                  solo
+                  v-model="market_search"
+                ></v-text-field>
+                <v-list>
+                    <v-list-item v-for="item in searchResult">
+                        <v-list-item-content>
+                          <v-list-item-title>{{ item.name }}</v-list-item-title>
 
-						  <v-list-item-subtitle>{{ item.type }} lvl {{ item.level }}</v-list-item-subtitle>
-						</v-list-item-content>
-						
+                          <v-list-item-subtitle>{{ item.type }} lvl {{ item.level }}</v-list-item-subtitle>
+                        </v-list-item-content>
+                        
+                        <v-list-item-action>
+                            <v-btn-toggle
+                                color="primary"
+                                dense
+                                group
+                                multiple
+                            >
+                              <v-btn @click=addCraft(item)>
+                                <v-icon>mdi-wrench</v-icon>
+                                craft
+                              </v-btn>
+                              <v-btn @click=buyItem(item)>
+                                <v-icon>mdi-cart</v-icon>
+                                buy
+                              </v-btn>
+                            </v-btn-toggle>
+                        </v-list-item-action>
+                    </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
+			<v-card>
+              <v-card-title>Operations</v-card-title>
+              <v-card-text>
+			  	<p>Balance : {{ sum_actual }}</p>
+			  	<p>Projection : {{ sum_projected }}</p>
+                <v-list>
+                    <v-list-item v-for="op in operations">
+                        <v-list-item-content>
+                          <v-list-item-title>{{ op.item_name }}</v-list-item-title>
+
+                          <v-list-item-subtitle>{{ Math.abs(op.quantity) }} à {{ op.item_price }}k/u</v-list-item-subtitle>
+						  <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
+                        </v-list-item-content>
 						<v-list-item-action>
-							<v-btn-toggle
-								color="primary"
-								dense
-								group
-								multiple
-							>
-							  <v-btn>
-								<v-icon>mdi-wrench</v-icon>
-								craft
-							  </v-btn>
-							  <v-btn @click=buyItem(item)>
-								<v-icon>mdi-cart</v-icon>
-								buy
-							  </v-btn>
-							  <v-btn @click="sellItem(item)">
-								<v-icon>mdi-currency-usd</v-icon>
-								sell
-							  </v-btn>
-						    </v-btn-toggle>
+							<v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
+							<v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
+							<v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
 						</v-list-item-action>
-					</v-list-item>
-				</v-list>
-    		  </v-card-text>
-  		  </v-card>
+                    </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
       </v-col>
-		  <!-- inventory -->
-		  <v-col cols="12" md="6">
-		    <v-card>
-  	  		<v-card-title>Crafts</v-card-title>
-    			<v-card-text>
-    			  <v-card v-for="craft in crafts">
-    			    <v-card-title>{{craft.item_name}}</v-card-title>
-    			    <v-card-text>
-    			      <ul>
-    			      <li v-for="ingredient in craft.recipe">
-    			        {{ingredient.posessed}}/{{ingredient.needed}} {{ingredient.item_name}}
-    			      </li>
-    			      </ul>
-    			    <v-card-text>
-    			  </v-card>
-    			</v-card-text>
-  		  </v-card>
-		  <!-- inventory -->
-  		  <v-card>
-  	  		<v-card-title>Inventory</v-card-title>
-    			<v-card-text>
-					<v-list>
-						<v-list-item v-for="item in inventory">
-							<v-list-item-content>
-							  <v-list-item-title><v-chip>{{ item.quantity }}</v-chip> {{ item.item_name }}</v-list-item-title>
-							</v-list-item-content>
-							
-							<v-list-item-action>
-							<v-row>
-							  <v-btn icon elevation="2" color="secondary" @click="editQuantity(item)">
-								<v-icon>mdi-pen</v-icon>
-							  </v-btn>
-							  <v-btn icon elevation="2" color="secondary" @click="sellItem(item)">
-								<v-icon>mdi-currency-usd</v-icon>
-							  </v-btn>
-							</v-row>
-							</v-list-item-action>
-						</v-list-item>
-					</v-list>
-    			</v-card-text>
-  		  </v-card>
-		  </v-col>
-		  </v-row>
-		</v-container>
-	  </v-main>
-	  
-	  <v-dialog
-		  v-model="buyWindow"
-		  width="600"
-	  >
-		  <v-card v-if="boughtItem">
-			<v-card-title>
-			  Buying {{ boughtItem.name }}
-			</v-card-title>
+          <!-- inventory -->
+          <v-col cols="12" md="6">
+            <v-card>
+                <v-card-title>Crafts</v-card-title>
+                <v-card-text>
+                  <v-card v-for="craft in crafts">
+                    <v-card-title>{{craft.item_name}}</v-card-title>
+                    <v-card-text>
+                      <ul>
+                      <li v-for="ingredient in craft.recipe">
+                        {{ingredient.posessed}}/{{ingredient.needed}} {{ingredient.item_name}}
+                      </li>
+                      </ul>
+                    <v-card-text>
+                  </v-card>
+                </v-card-text>
+            </v-card>
+          <!-- inventory -->
+            <v-card>
+                <v-card-title>Inventory</v-card-title>
+                <v-card-text>
+                    <v-list>
+                        <v-list-item v-for="item in inventory">
+                            <v-list-item-content>
+                              <v-list-item-title><v-chip>{{ item.quantity }}</v-chip> {{ item.item_name }}</v-list-item-title>
+                            </v-list-item-content>
+                            
+                            <v-list-item-action>
+                            <v-row>
+                              <v-btn icon elevation="2" color="secondary" @click="editQuantity(item)">
+                                <v-icon>mdi-pen</v-icon>
+                              </v-btn>
+                              <v-btn icon elevation="2" color="secondary" @click="sellItem(item)">
+                                <v-icon>mdi-currency-usd</v-icon>
+                              </v-btn>
+                            </v-row>
+                            </v-list-item-action>
+                        </v-list-item>
+                    </v-list>
+                </v-card-text>
+            </v-card>
+          </v-col>
+          </v-row>
+        </v-container>
+      </v-main>
+      
+      <v-dialog
+          v-model="buyWindow"
+          width="600"
+      >
+          <v-card v-if="boughtItem">
+            <v-card-title>
+              Buying {{ boughtItem.name }}
+            </v-card-title>
 
-			<v-card-text>
-				<v-row>
-					<v-col cols="12" sm="3">
-						<!--<v-img :src="boughtItem.img"></v-img>-->
-					</v-col>
-					<v-col  cols="12" sm="9">
-						<v-select :items="[1,10,100]" label="Quantity" v-model="boughtQuantity"></v-select>
-						<v-text-field autofocus type="number" label="Price" v-model="boughtPrice"></v-text-field>
-					</v-col>
-				</v-row>
-				<v-row>
-					<v-btn
-						color="success"
-						@click="triggerBuy()"
-					>
-						Buy
-					</v-btn>
-				</v-row>
-			</v-card-text>
-			
-			<v-card-text>
-				<p v-for="char in boughtItem.effects">{{ char }}</p>
-			</v-card-text>
-			<v-card-text>
-				{{ boughtItem.description }}
-			</v-card-text>
+            <v-card-text>
+                <v-row>
+                    <v-col cols="12" sm="3">
+                        <!--<v-img :src="boughtItem.img"></v-img>-->
+                    </v-col>
+                    <v-col  cols="12" sm="9">
+                        <v-select :items="[1,10,100]" label="Quantity" v-model="boughtQuantity"></v-select>
+                        <v-text-field autofocus type="number" label="Price" v-model="boughtPrice"></v-text-field>
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-btn
+                        color="success"
+                        @click="triggerBuy()"
+                    >
+                        Buy
+                    </v-btn>
+                </v-row>
+            </v-card-text>
+            
+            <v-card-text>
+                <p v-for="char in boughtItem.effects">{{ char }}</p>
+            </v-card-text>
+            <v-card-text>
+                {{ boughtItem.description }}
+            </v-card-text>
 
-			<v-divider></v-divider>
+            <v-divider></v-divider>
 
-			<v-card-actions>
-			  <v-btn
-				color="success"
-				text
-				@click="triggerBuy()"
-			  >
-				Buy
-			  </v-btn>
-			  <v-spacer></v-spacer>
-			  <v-btn
-				color="primary"
-				text
-				@click="buyWindow = false"
-			  >
-				Done
-			  </v-btn>
-			</v-card-actions>
-		  </v-card>
-		</v-dialog>
-		
-		<v-dialog
-		  v-model="sellWindow"
-		  width="600"
-	  >
-		  <v-card v-if="soldItem">
-			<v-card-title>
-			  Selling {{ soldItem.name }}
-			</v-card-title>
+            <v-card-actions>
+              <v-btn
+                color="success"
+                text
+                @click="triggerBuy()"
+              >
+                Buy
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                text
+                @click="buyWindow = false"
+              >
+                Done
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        
+        <v-dialog
+          v-model="sellWindow"
+          width="600"
+      >
+          <v-card v-if="soldItem">
+            <v-card-title>
+              Selling {{ soldItem.name }}
+            </v-card-title>
 
-			<v-card-text>
-				<v-row>
-					<v-col cols="12" sm="3">
-						<!--<v-img :src="boughtItem.img"></v-img>-->
-					</v-col>
-					<v-col  cols="12" sm="9">
-						<v-select :items="[1,10,100]" label="Quantity" v-model="soldQuantity"></v-select>
-						<v-text-field autofocus type="number" label="Price" v-model="soldPrice"></v-text-field>
-						<v-text-field disabled label="Tax" :value="soldTax"></v-text-field>
-						<v-text-field label="notes" v-model="soldNote"></v-text-field>
-					</v-col>
-				</v-row>
-				<v-row>
-					<v-btn
-						color="success"
-						@click="triggerSell()"
-					>
-						Sell
-					</v-btn>
-				</v-row>
-			</v-card-text>
-			
-			<v-card-text>
-				<p v-for="char in soldItem.effects">{{ char }}</p>
-			</v-card-text>
-			<v-card-text>
-				{{ soldItem.description }}
-			</v-card-text>
+            <v-card-text>
+                <v-row>
+                    <v-col cols="12" sm="3">
+                        <!--<v-img :src="boughtItem.img"></v-img>-->
+                    </v-col>
+                    <v-col  cols="12" sm="9">
+                        <v-select :items="[1,10,100]" label="Quantity" v-model="soldQuantity"></v-select>
+                        <v-text-field autofocus type="number" label="Price" v-model="soldPrice"></v-text-field>
+                        <v-text-field disabled label="Tax" :value="soldTax"></v-text-field>
+                        <v-text-field label="notes" v-model="soldNote"></v-text-field>
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-btn
+                        color="success"
+                        @click="triggerSell()"
+                    >
+                        Sell
+                    </v-btn>
+                </v-row>
+            </v-card-text>
+            
+            <v-card-text>
+                <p v-for="char in soldItem.effects">{{ char }}</p>
+            </v-card-text>
+            <v-card-text>
+                {{ soldItem.description }}
+            </v-card-text>
 
-			<v-divider></v-divider>
+            <v-divider></v-divider>
 
-			<v-card-actions>
-			  <v-btn
-				color="success"
-				text
-				@click="triggerSell()"
-			  >
-				Sell
-			  </v-btn>
-			  <v-spacer></v-spacer>
-			  <v-btn
-				color="primary"
-				text
-				@click="sellWindow = false"
-			  >
-				Done
-			  </v-btn>
-			</v-card-actions>
-		  </v-card>
-		</v-dialog>
+            <v-card-actions>
+              <v-btn
+                color="success"
+                text
+                @click="triggerSell()"
+              >
+                Sell
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                text
+                @click="sellWindow = false"
+              >
+                Done
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
-	  <v-footer app>
-		<!-- -->
-	  </v-footer>
+      <v-footer app>
+        <!-- -->
+      </v-footer>
     </v-app>
   </div>
 
@@ -247,123 +265,169 @@
   <script src="/static/vue.js"></script>
   <script src="/static/vuetify.js"></script>
   <script>
-	var SOURCE="/"
+    var SOURCE="/"
     new Vue({
       el: '#app',
       vuetify: new Vuetify({
-		icons: {
-			iconfont: 'mdi',
-		}
-	  }),
-	  data() {
-		return {
-			market_search: "",
-			searchable: [],
-			crafts: [],
-			inventory: [],
-			buyWindow: false,
-			boughtItem: null,
-			boughtQuantity: 1,
-			boughtPrice: null,
-			sellWindow: false,
-			soldItem: null,
-			soldQuantity: 1,
-			soldPrice: null,
-			soldNote: null,
-		};
-	  },
-	  mounted: function() {
-		this.getSearchable();
-		this.getInventory();
-	  },
-	  methods: {
-		buyItem: function(item) {
-			this.buyWindow = true;
-			this.boughtItem = item;
-			axios.get(SOURCE+"api/item_details/"+item.id)
-				.then((response) => this.boughtItem = response.data)
-				.catch((error) => this.handleError(error));
-		},
-		sellItem: function(item) {
-			this.sellWindow = true;
-			this.soldItem = null;
-			axios.get(SOURCE+"api/item_details/"+item.item_id)
-				.then((response) => this.soldItem = response.data)
-				.catch((error) => this.handleError(error));
-		},
-		getSearchable: function () {
-			axios.get(SOURCE+"api/searchable")
-				.then((response) => this.searchable = response.data)
-				.catch((error) => this.handleError(error));
-		},
-		getInventory: function () {
-			axios.get(SOURCE+"api/inventory")
-				.then((response) => this.inventory = response.data)
-				.catch((error) => this.handleError(error));
-		},
-		getCrafts: function () {
-			axios.get(SOURCE+"api/inventory")
-				.then((response) => this.crafts = response.data)
-				.catch((error) => this.handleError(error));
-		},
-		triggerBuy: function() {
-			axios.post(SOURCE+"api/buy", {
-				id: this.boughtItem.id,
-				quantity: this.boughtQuantity,
-				price: this.boughtPrice,
-			})
-			.then((response) => {
-				this.getInventory();
+        icons: {
+            iconfont: 'mdi',
+        }
+      }),
+      data() {
+        return {
+            market_search: "",
+            searchable: [],
+            crafts: [],
+            inventory: [],
+            buyWindow: false,
+            boughtItem: null,
+            boughtQuantity: 1,
+            boughtPrice: null,
+            sellWindow: false,
+            soldItem: null,
+            soldQuantity: 1,
+            soldPrice: null,
+            soldNote: null,
+			operations: [],
+        };
+      },
+      mounted: function() {
+        this.getSearchable();
+        this.getInventory();
+		this.getOperations();
+      },
+      methods: {
+        buyItem: function(item) {
+            this.buyWindow = true;
+            this.boughtItem = item;
+            axios.get(SOURCE+"api/item_details/"+item.id)
+                .then((response) => this.boughtItem = response.data)
+                .catch((error) => this.handleError(error));
+        },
+        sellItem: function(item) {
+            this.sellWindow = true;
+            this.soldItem = null;
+            axios.get(SOURCE+"api/item_details/"+item.item_id)
+                .then((response) => this.soldItem = response.data)
+                .catch((error) => this.handleError(error));
+        },
+		addCraft: function(item) {
+			var quant = prompt("how many " + item.name + " do you want to make ?")
+			axios.post(SOURCE+"api/crafts", {
+				"item_id": item.id,
+				"quantity": quant,
+			}).then((reponse) => {
 				this.getCrafts();
-			})
-			.catch((error) => this.handleError(error))
+			}).catch((error) => this.handleError(error))
 		},
-		triggerSell: function() {
-			axios.post(SOURCE+"api/sell", {
-				id: this.soldItem.id,
-				quantity: this.soldQuantity,
-				price: this.soldPrice,
-				note: this.soldNote,
-			})
-			.then((response) => {
-				this.getInventory();
+		craftDone: function(craft) {
+			var quant = prompt("how many " + item.name + " do you want to make ?")
+			axios.post(SOURCE+"api/crafts/done", {
+				"item_id": item.id,
+				"quantity": quant,
+			}).then((reponse) => {
 				this.getCrafts();
-			})
-			.catch((error) => this.handleError(error))
-		},
-		triggerSave: function() {
-			axios.post(SOURCE+"api/save", {})
-			.then((response) => alert(response.data))
-			.catch((error) => this.handleError(error))
-		},
-		editQuantity: function(item) {
-			newQuantity = prompt("new quantity for " + item.item_name);
-			axios.post(SOURCE+"api/inventory/editQuantity", {
-				id: item.item_id,
-				quantity: newQuantity,
-			})
-			.then((reponse) => {
 				this.getInventory();
-				this.getCrafts();
-			})
-			.catch((error) => this.handleError(error))
+			}).catch((error) => this.handleError(error))
 		},
-		handleError: function (error) {
-			console.error(error);
+        getSearchable: function () {
+            axios.get(SOURCE+"api/searchable")
+                .then((response) => this.searchable = response.data)
+                .catch((error) => this.handleError(error));
+        },
+        getInventory: function () {
+            axios.get(SOURCE+"api/inventory")
+                .then((response) => this.inventory = response.data)
+                .catch((error) => this.handleError(error));
+        },
+        getCrafts: function () {
+            axios.get(SOURCE+"api/crafts")
+                .then((response) => this.crafts = response.data)
+                .catch((error) => this.handleError(error));
+        },
+		getOperations: function () {
+            axios.get(SOURCE+"api/operations")
+                .then((response) => this.operations = JSON.parse(response.data.replace(/NaN/gm, '""')))
+                .catch((error) => this.handleError(error));
+        },
+        triggerBuy: function() {
+            axios.post(SOURCE+"api/operations/buy", {
+                id: this.boughtItem.id,
+                quantity: this.boughtQuantity,
+                price: this.boughtPrice,
+            })
+            .then((response) => {
+                this.getInventory();
+                this.getCrafts();
+				this.getOperations();
+            })
+            .catch((error) => this.handleError(error))
+        },
+        triggerSell: function() {
+            axios.post(SOURCE+"api/operations/sell", {
+                id: this.soldItem.id,
+                quantity: this.soldQuantity,
+                price: this.soldPrice,
+                note: this.soldNote,
+            })
+            .then((response) => {
+                this.getInventory();
+                this.getCrafts();
+				this.getOperations();
+            })
+            .catch((error) => this.handleError(error))
+        },
+		confirmSell: function(op) {
+			axios.post(SOURCE+"api/operations/" + op.op_id + "/confirm", {})
+				.then((response) => op.sell_confirmed=true)
+				.catch((error) => this.handleError(error))
 		},
-	  },
-	  computed: {
-		searchResult() {
-			if (this.market_search.length > 2) {
-				return this.searchable.filter((item) => item.name.toLowerCase().indexOf(this.market_search.toLowerCase()) != -1)
-			} else {
-				return []
+        triggerSave: function() {
+            axios.post(SOURCE+"api/save", {})
+            .then((response) => alert(response.data))
+            .catch((error) => this.handleError(error))
+        },
+        editQuantity: function(item) {
+            var newQuantity = prompt("new quantity for " + item.item_name);
+			console.log(newQuantity);
+			if (newQuantity) {
+				axios.post(SOURCE+"api/inventory/editQuantity", {
+					id: item.item_id,
+					quantity: newQuantity,
+				})
+				.then((reponse) => {
+					this.getInventory();
+					this.getCrafts();
+				})
+				.catch((error) => this.handleError(error))
 			}
+        },
+        handleError: function (error) {
+            console.error(error);
+        },
+      },
+      computed: {
+        searchResult() {
+            if (this.market_search.length > 2) {
+                return this.searchable.filter((item) => item.name.toLowerCase().indexOf(this.market_search.toLowerCase()) != -1)
+            } else {
+                return []
+            }
+        },
+        soldTax() {
+            return Math.ceil(this.soldPrice*0.02);
+        },
+		sum_projected() {
+			var soldK = this.operations.filter((op) => op.buy_or_sell == "sell").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+			var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+			return -soldK - boughtK;
 		},
-		soldTax() {
-			return Math.ceil(this.soldPrice*0.02);
-		},
-	  }
+		sum_actual() {
+			var reallySoldK = this.operations.filter((op) => op.buy_or_sell == "sell" && op.sell_confirmed).reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+			var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+			return -reallySoldK - boughtK;
+		}
+      }
     })
   </script>
 </body>
