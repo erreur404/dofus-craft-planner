@@ -37,19 +37,72 @@ def get_item_details(id):
 
 @app.route("/api/crafts", methods=["GET"])
 def get_crafts():
-    res = []
+    res = {'crafts': [], 'total':[]}
     used_ingredients = {}
+    logging.info(f"computing { len(persistance.crafts) } crafts")
+    # for each craft
     for _, craft in persistance.crafts.iterrows():
-        logging.debug(craft)
-    return res
+        logging.info(craft)
+        # get the recipe
+        item_to_craft = data.get_by_id(craft["item_id"])
+        ingredients = data.get_ingredients(item_to_craft)
+        # initialye the return object
+        craft_json = {
+            'item': item_to_craft,
+            'item_price': persistance.get_price(craft.item_id),
+            'quantity': craft.quantity,
+            'ingredients': [],
+            'buy_price': 0,
+            'resources_value': 0,
+        }
+        # for each ingredient in the recipe
+        for ing in ingredients:
+            ing_id = ing["item"]["id"]
+            if ing_id not in used_ingredients:
+                used_ingredients[ing_id] = 0
+
+            # how much of A is needed to craft x Bs
+            needed = ing["quantity"] * max(0, craft["quantity"]-craft["crafted"])
+            # how much of A do we own, and is not required by another craft
+            owned = max(0, persistance.get_quantity(ing_id)-used_ingredients[ing_id])
+            # how much one unit of the ingredient costs
+            ing_price = persistance.get_price(ing_id)
+            craft_json["ingredients"].append({
+                'needed': needed,
+                'owned': owned,
+                'item_id': ing_id,
+                'item_name': ing["item"]["name"],
+                'item_price': ing_price,
+                'set_price': ing_price*needed,
+            })
+            # compute the total cost of the craft
+            craft_json["buy_price"] += ing_price*max(0, needed-owned)
+            craft_json["resources_value"] += ing_price*needed
+            # count how much of each ingredient we already required for all crafts (will be substracted from inventory and used for the total list)
+            used_ingredients[ing_id] += needed
+        res["crafts"].append(craft_json)
+    for ing in used_ingredients:
+        item = data.get_by_id(ing)
+        needed = used_ingredients[ing]
+        owned = persistance.get_quantity(ing)
+        unit_price = persistance.get_price(ing)
+        res["total"].append({
+            'item': item,
+            'item_price': unit_price,
+            'needed': needed,
+            'owned': owned,
+            'buy_cost': unit_price * max(0, needed-owned)
+        })
+    
+    return jsonify(res)
 
 @app.route("/api/crafts", methods=["POST"])
 def add_craft():
     payload = request.json
     item = data.get_by_id(payload["item_id"])
-    logging.debug(item)
-    if (len(item["craft"]) > 0):
-        pass
+    logging.info(item)
+    if ("craft" in item and len(item["craft"]) > 0):
+        persistance.craft_add(item, int(payload["quantity"]))
     return "ok"
 
 @app.route("/api/operations")
@@ -82,7 +135,13 @@ def get_inventory():
 @app.route("/api/inventory/editQuantity", methods=['POST'])
 def edit_inventory():
   payload = request.json
-  persistance.inventory.loc[persistance.inventory.item_id == payload["id"], "quantity"] = int(payload["quantity"])
+  persistance.set_quantity(payload["id"], int(payload["quantity"]))
+  return jsonify(persistance.inventory.to_dict(orient="records"))
+
+@app.route("/api/inventory/editPrice", methods=['POST'])
+def edit_price():
+  payload = request.json
+  persistance.set_price(data.get_by_id(payload["id"]), int(payload["price"]))
   return jsonify(persistance.inventory.to_dict(orient="records"))
 
 @app.route("/api/save", methods=['POST'])

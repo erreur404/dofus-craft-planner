@@ -1,3 +1,4 @@
+import logging
 import json
 
 class CATEGORIES:
@@ -48,6 +49,17 @@ def get_searchables():
     "type": item["type"],
   }, get_all_items()),
      key=lambda item: item["name"]))
+
+def get_ingredients(item):
+  res = []
+  logging.info(f"making ingredients list for {item['name']}")
+  for ing in item["craft"]:
+    logging.debug(ing)
+    res.append({
+      'item': get_by_url(ing["url"]),
+      'quantity': ing["quantity"],
+    })
+  return res
 
 if __name__ == "__main__":
   print(openJSONdb().keys())

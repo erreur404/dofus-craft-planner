@@ -45,6 +45,7 @@ class Persistance:
             self.crafts = pd.DataFrame(columns=[
               "item_name",
               "item_url",
+              "item_id",
               "quantity",
               "crafted",
             ])
@@ -53,13 +54,31 @@ class Persistance:
         writer = pd.ExcelWriter(DB_FILE, engine="xlsxwriter")
         logging.debug(f"saving Persistance.operations to {DB_FILE}::sheet={OPERATIONS_SHEET}")
         logging.debug(self.operations)
-        self.operations.to_excel(writer, sheet_name=OPERATIONS_SHEET)
+        self.operations.to_excel(writer, sheet_name=OPERATIONS_SHEET, index=False)
         logging.debug(f"saving Persistance.inventory to {DB_FILE}::sheet={INVENTORY_SHEET}")
         logging.debug(self.inventory)
-        self.inventory.to_excel(writer, sheet_name=INVENTORY_SHEET)
+        self.inventory.to_excel(writer, sheet_name=INVENTORY_SHEET, index=False)
         logging.debug(f"saving Persistance.crafts to {DB_FILE}::sheet={CRAFT_SHEET}")
-        self.crafts.to_excel(writer, sheet_name=CRAFT_SHEET)
+        self.crafts.to_excel(writer, sheet_name=CRAFT_SHEET, index=False)
         writer.save()
+
+    def craft_add(self, item, quantity):
+        self.crafts = self.crafts.append({
+            "item_name": item["name"],
+            "item_url": item["url"],
+            "item_id": item["id"],
+            "quantity": int(quantity),
+            "crafted": 0,
+        }, ignore_index=True)
+    
+    def craft_one(self, item, ingredients):
+        self.crafts.loc[self.crafts.item_id==item["id"], "crafted"] += 1
+        self.add_quantity(item["id"], 1)
+        for ing in ingredients:
+          self.add_quantity(ing["id"], -int(ing["quantity"]))
+
+    def craft_delete(self, item):
+        self.crafts = self.crafts[self.crafts.item_id != item["id"]]
 
     def buy_item(self, item, price, quantity):
         self.item_operation("buy", item, price, quantity)
@@ -108,6 +127,33 @@ class Persistance:
           "quantity": quantity,
           "item_price": pricePerUnit,
         }, ignore_index=True)
+
+    def set_quantity(self, id: str, quantity: int):
+      self.inventory.loc[self.inventory.item_id == id, "quantity"] = quantity
+
+    def get_quantity(self, id: str) -> int:
+      res = list(self.inventory.loc[self.inventory.item_id == id]["quantity"])
+      return 0 if len(res) == 0 else res[0]
+
+    def set_price(self, item, price: int):
+      if len(self.inventory[self.inventory.item_id==item["id"]]) == 1:
+        self.inventory.loc[self.inventory.item_id==item["id"], "item_price"] = price
+      else:
+        self.inventory = self.inventory.append({
+          "item_name": item["name"],
+          "item_url": item["url"],
+          "item_id": item["id"],
+          "quantity": 0,
+          "item_price": price,
+        }, ignore_index=True)
+
+    def get_price(self, id: str) -> int:
+      res = list(self.inventory.loc[self.inventory.item_id == id]["item_price"])
+      return 0 if len(res) == 0 else res[0]
+
+    def add_quantity(self, id: str, quantity: int):
+      self.inventory.loc[self.inventory.item_id == id, "quantity"] += quantity
+
 
 if __name__ == "__main__":
   p = Persistance()

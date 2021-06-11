@@ -40,7 +40,7 @@
                   v-model="market_search"
                 ></v-text-field>
                 <v-list>
-                    <v-list-item v-for="item in searchResult">
+                    <v-list-item v-for="item in searchResult" :v-key="item.id">
                         <v-list-item-content>
                           <v-list-item-title>{{ item.name }}</v-list-item-title>
 
@@ -62,48 +62,65 @@
                                 <v-icon>mdi-cart</v-icon>
                                 buy
                               </v-btn>
+                              <v-btn @click=setPrice(item)>
+                                <v-icon>mdi-tag</v-icon>
+                                {{ getPrice(item) }}
+                              </v-btn>
                             </v-btn-toggle>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
               </v-card-text>
             </v-card>
-			<v-card>
+			      <v-card>
               <v-card-title>Operations</v-card-title>
               <v-card-text>
-			  	<p>Balance : {{ sum_actual }}</p>
-			  	<p>Projection : {{ sum_projected }}</p>
+                <p>Balance : {{ sum_actual }}</p>
+                <p>Projection : {{ sum_projected }}</p>
                 <v-list>
                     <v-list-item v-for="op in operations">
                         <v-list-item-content>
                           <v-list-item-title>{{ op.item_name }}</v-list-item-title>
 
                           <v-list-item-subtitle>{{ Math.abs(op.quantity) }} à {{ op.item_price }}k/u</v-list-item-subtitle>
-						  <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
+						              <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
                         </v-list-item-content>
-						<v-list-item-action>
-							<v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
-							<v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
-							<v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
-						</v-list-item-action>
+					            	<v-list-item-action>
+                          <v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
+                          <v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
+                          <v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
+                        </v-list-item-action>
                     </v-list-item>
                 </v-list>
               </v-card-text>
             </v-card>
-      </v-col>
-          <!-- inventory -->
+          </v-col>
+          <!-- crafts -->
           <v-col cols="12" md="6">
             <v-card>
-                <v-card-title>Crafts</v-card-title>
-                <v-card-text>
-                  <v-card v-for="craft in crafts">
-                    <v-card-title>{{craft.item_name}}</v-card-title>
+              <v-card-title>Crafts</v-card-title>
+              <v-card-text>
+                <v-card>
+                    <v-card-title>Resource summup</v-card-title>
+                    <v-card-text>
+                      Total to buy: {{ sum_resources_to_buy }}k
+                      <ul>
+                        <li v-for="resource in crafts.total"  :v-key="resource.item.id" @click="market_search = resource.item.name">
+                          {{resource.owned}}/{{resource.needed}} {{resource.item.name}} - {{resource.item_price}}k/u --> buy cost : {{resource.buy_cost}}k
+                        </li>
+                      </ul>
+                    <v-card-text>
+                  </v-card>
+                  <v-card v-for="craft in crafts.crafts" :v-key="craft.item.id">
+                    <v-card-title>{{craft.item.name}}</v-card-title>
+                    <v-card-subtitle>{{craft.item.type}} lvl {{craft.item.level}} - {{craft.quantity}} units à {{craft.item_price}}k/u - total {{ craft.quantity * craft.item_price }}k - resources value {{craft.resources_value}}k - buy resources {{craft.buy_price}}k</v-card-subtitle>
                     <v-card-text>
                       <ul>
-                      <li v-for="ingredient in craft.recipe">
-                        {{ingredient.posessed}}/{{ingredient.needed}} {{ingredient.item_name}}
-                      </li>
+                        <li v-for="ingredient in craft.ingredients" :v-key="ingredient.item_id" @click="market_search = ingredient.item_name">
+                          {{ingredient.owned}}/{{ingredient.needed}} {{ingredient.item_name}} - {{ingredient.item_price}}k/u --> {{ingredient.set_price}}k
+                        </li>
                       </ul>
+                      
                     <v-card-text>
                   </v-card>
                 </v-card-text>
@@ -277,7 +294,7 @@
         return {
             market_search: "",
             searchable: [],
-            crafts: [],
+            crafts: {crafts:[], total: []},
             inventory: [],
             buyWindow: false,
             boughtItem: null,
@@ -288,13 +305,14 @@
             soldQuantity: 1,
             soldPrice: null,
             soldNote: null,
-			operations: [],
+			      operations: [],
         };
       },
       mounted: function() {
         this.getSearchable();
         this.getInventory();
-		this.getOperations();
+		    this.getOperations();
+        this.getCrafts();
       },
       methods: {
         buyItem: function(item) {
@@ -311,25 +329,47 @@
                 .then((response) => this.soldItem = response.data)
                 .catch((error) => this.handleError(error));
         },
-		addCraft: function(item) {
-			var quant = prompt("how many " + item.name + " do you want to make ?")
-			axios.post(SOURCE+"api/crafts", {
-				"item_id": item.id,
-				"quantity": quant,
-			}).then((reponse) => {
-				this.getCrafts();
-			}).catch((error) => this.handleError(error))
-		},
-		craftDone: function(craft) {
-			var quant = prompt("how many " + item.name + " do you want to make ?")
-			axios.post(SOURCE+"api/crafts/done", {
-				"item_id": item.id,
-				"quantity": quant,
-			}).then((reponse) => {
-				this.getCrafts();
-				this.getInventory();
-			}).catch((error) => this.handleError(error))
-		},
+        setPrice: function(item) {
+            var newPrice = prompt("new price per unit for " + item.item_name);
+            if (newPrice) {
+              axios.post(SOURCE+"api/inventory/editPrice", {
+                id: item.id,
+                price: newPrice,
+              })
+              .then((reponse) => {
+                this.getInventory();
+                this.getCrafts();
+              })
+              .catch((error) => this.handleError(error))
+            }
+        },
+        getPrice: function(item) {
+          priced_item = this.inventory.filter((it) => it.item_id.toString() == item.id.toString())
+          if (priced_item.length < 1) {
+            return "price";
+          } else {
+            return priced_item[0].item_price + " k";
+          }
+        },
+        addCraft: function(item) {
+          var quant = prompt("how many " + item.name + " do you want to make ?")
+          axios.post(SOURCE+"api/crafts", {
+            "item_id": item.id,
+            "quantity": quant,
+          }).then((reponse) => {
+            this.getCrafts();
+          }).catch((error) => this.handleError(error))
+        },
+        craftDone: function(craft) {
+          var quant = prompt("how many " + item.name + " do you want to make ?")
+          axios.post(SOURCE+"api/crafts/done", {
+            "item_id": item.id,
+            "quantity": quant,
+          }).then((reponse) => {
+            this.getCrafts();
+            this.getInventory();
+          }).catch((error) => this.handleError(error))
+        },
         getSearchable: function () {
             axios.get(SOURCE+"api/searchable")
                 .then((response) => this.searchable = response.data)
@@ -345,9 +385,17 @@
                 .then((response) => this.crafts = response.data)
                 .catch((error) => this.handleError(error));
         },
-		getOperations: function () {
+		    getOperations: function () {
             axios.get(SOURCE+"api/operations")
-                .then((response) => this.operations = JSON.parse(response.data.replace(/NaN/gm, '""')))
+                .then((response) => {
+                  console.debug(response.data);
+                  if(typeof(response.data) == typeof("")) {
+                    // some browser ont parse the json systematically
+                    this.operations = JSON.parse(response.data.replace(/NaN/gm, '""'));
+                  } else {
+                    this.operations = response.data
+                  }                  
+                })
                 .catch((error) => this.handleError(error));
         },
         triggerBuy: function() {
@@ -359,7 +407,7 @@
             .then((response) => {
                 this.getInventory();
                 this.getCrafts();
-				this.getOperations();
+				        this.getOperations();
             })
             .catch((error) => this.handleError(error))
         },
@@ -373,34 +421,34 @@
             .then((response) => {
                 this.getInventory();
                 this.getCrafts();
-				this.getOperations();
+				        this.getOperations();
             })
             .catch((error) => this.handleError(error))
         },
-		confirmSell: function(op) {
-			axios.post(SOURCE+"api/operations/" + op.op_id + "/confirm", {})
-				.then((response) => op.sell_confirmed=true)
-				.catch((error) => this.handleError(error))
-		},
+        confirmSell: function(op) {
+          axios.post(SOURCE+"api/operations/" + op.op_id + "/confirm", {})
+            .then((response) => op.sell_confirmed=true)
+            .catch((error) => this.handleError(error))
+        },
         triggerSave: function() {
             axios.post(SOURCE+"api/save", {})
             .then((response) => alert(response.data))
             .catch((error) => this.handleError(error))
         },
         editQuantity: function(item) {
-            var newQuantity = prompt("new quantity for " + item.item_name);
-			console.log(newQuantity);
-			if (newQuantity) {
-				axios.post(SOURCE+"api/inventory/editQuantity", {
-					id: item.item_id,
-					quantity: newQuantity,
-				})
-				.then((reponse) => {
-					this.getInventory();
-					this.getCrafts();
-				})
-				.catch((error) => this.handleError(error))
-			}
+          var newQuantity = prompt("new quantity for " + item.item_name);
+          console.log(newQuantity);
+          if (newQuantity) {
+            axios.post(SOURCE+"api/inventory/editQuantity", {
+              id: item.item_id,
+              quantity: newQuantity,
+            })
+            .then((reponse) => {
+              this.getInventory();
+              this.getCrafts();
+            })
+            .catch((error) => this.handleError(error))
+          }
         },
         handleError: function (error) {
             console.error(error);
@@ -417,16 +465,19 @@
         soldTax() {
             return Math.ceil(this.soldPrice*0.02);
         },
-		sum_projected() {
-			var soldK = this.operations.filter((op) => op.buy_or_sell == "sell").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
-			var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
-			return -soldK - boughtK;
-		},
-		sum_actual() {
-			var reallySoldK = this.operations.filter((op) => op.buy_or_sell == "sell" && op.sell_confirmed).reduce((acc, op) => acc + op.quantity*op.item_price, 0)
-			var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
-			return -reallySoldK - boughtK;
-		}
+        sum_projected() {
+          var soldK = this.operations.filter((op) => op.buy_or_sell == "sell").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+          var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+          return -soldK - boughtK;
+        },
+        sum_actual() {
+          var reallySoldK = this.operations.filter((op) => op.buy_or_sell == "sell" && op.sell_confirmed).reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+          var boughtK = this.operations.filter((op) => op.buy_or_sell == "buy").reduce((acc, op) => acc + op.quantity*op.item_price, 0)
+          return -reallySoldK - boughtK;
+        },
+        sum_resources_to_buy() {
+          return this.crafts.total.reduce((acc, resource) => acc + resource.buy_cost, 0)
+        }
       }
     })
   </script>
