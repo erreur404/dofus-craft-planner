@@ -35,13 +35,11 @@ def get_searchable():
 def get_item_details(id):
     return jsonify(data.get_by_id(id))
 
-@app.route("/api/crafts", methods=["GET"])
-def get_crafts():
+def _get_crafts(df):
     res = {'crafts': [], 'total':[]}
     used_ingredients = {}
-    logging.info(f"computing { len(persistance.crafts) } crafts")
     # for each craft
-    for _, craft in persistance.crafts.iterrows():
+    for _, craft in df.iterrows():
         logging.info(craft)
         # get the recipe
         item_to_craft = data.get_by_id(craft["item_id"])
@@ -51,6 +49,7 @@ def get_crafts():
             'item': item_to_craft,
             'item_price': persistance.get_price(craft.item_id),
             'quantity': craft.quantity,
+            'crafted': craft.crafted,
             'ingredients': [],
             'buy_price': 0,
             'resources_value': 0,
@@ -93,7 +92,12 @@ def get_crafts():
             'owned': owned,
             'buy_cost': unit_price * max(0, needed-owned)
         })
-    
+    return res
+
+@app.route("/api/crafts", methods=["GET"])
+def get_crafts():
+    logging.info(f"computing { len(persistance.crafts) } crafts")
+    res = _get_crafts(persistance.crafts)
     return jsonify(res)
 
 @app.route("/api/crafts", methods=["POST"])
@@ -103,6 +107,23 @@ def add_craft():
     logging.info(item)
     if ("craft" in item and len(item["craft"]) > 0):
         persistance.craft_add(item, int(payload["quantity"]))
+    return "ok"
+
+@app.route("/api/crafts/<id>", methods=["DELETE"])
+def delete_craft(id):
+    item = data.get_by_id(id)
+    logging.info(f"delete craft {item['name']}")
+    persistance.craft_delete(item)
+    return "ok"
+
+@app.route("/api/crafts/<id>", methods=["POST"])
+def do_craft(id):
+    item = data.get_by_id(id)
+    logging.info(f"do one craft {item['name']}")
+    ingredients = _get_crafts(persistance.crafts[persistance.crafts.item_id == int(id)])
+    logging.info(ingredients)
+    ingredients = ingredients["total"]
+    persistance.craft_one(item, ingredients)
     return "ok"
 
 @app.route("/api/operations")
@@ -157,5 +178,5 @@ def send_static(path):
 
 if __name__ == "__main__":
     logging.info(f"starting app at {getcwd()}")
-    app.run(debug=True)  # for debug
-    #  ui.run()
+    #  app.run(debug=True)  # for debug
+    ui.run()

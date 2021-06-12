@@ -26,13 +26,13 @@ def get_all_items():
 def get_by_url(item_url):
   item = list(filter(lambda item: item["url"] == item_url, get_all_items()))
   if len(item) != 1:
-    raise "found no or more than 1 item with this url"
+    raise "found no or more than 1 item with this url [" + item_url + "] : " + str(item)
   return item[0]
 
 def get_by_id(id):
-  item = list(filter(lambda item: str(item["id"]) == str(id), get_all_items()))
+  item = list(filter(lambda item: str(item["id"]) == str(int(id)), get_all_items()))
   if len(item) != 1:
-    raise "found no or more than 1 item with this url"
+    raise "found no or more than 1 item with this id [" + str(id) + "] : " + str(item)
   return item[0]
 
 def get_craft(item_url):
