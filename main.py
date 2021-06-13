@@ -156,7 +156,7 @@ def get_inventory():
 @app.route("/api/inventory/editQuantity", methods=['POST'])
 def edit_inventory():
   payload = request.json
-  persistance.set_quantity(payload["id"], int(payload["quantity"]))
+  persistance.set_quantity(data.get_by_id(payload["id"]), int(payload["quantity"]))
   return jsonify(persistance.inventory.to_dict(orient="records"))
 
 @app.route("/api/inventory/editPrice", methods=['POST'])

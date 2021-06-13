@@ -142,10 +142,7 @@ class Persistance:
 
     def set_quantity(self, item, quantity: int):
         id = item["id"]
-        self.inventory_initialize_item(item)
-        if len(self.inventory[self.inventory.item_id==id]) == 1:
-            self.inventory.loc[self.inventory.item_id==id, "item_price"] = price
-        
+        self.inventory_initialize_item(item)        
         self.inventory.loc[self.inventory.item_id == id, "quantity"] = quantity
 
     def get_quantity(self, id: str) -> int:
