@@ -33,11 +33,12 @@
               <v-card-title>Market</v-card-title>
               <v-card-text>
                 <v-text-field
-                  dense
-                  filled
-                  rounded
-                  solo
-                  v-model="market_search"
+                    dense
+                    filled
+                    rounded
+                    solo
+                    v-model="market_search"
+                    prepend-inner-icon="mdi-magnify"
                 ></v-text-field>
                 <v-list>
                     <v-list-item v-for="item in searchResult" :v-key="item.id">
@@ -72,27 +73,42 @@
                 </v-list>
               </v-card-text>
             </v-card>
+            <!-- operations -->
             <v-card>
-              <v-card-title>Operations</v-card-title>
-              <v-card-text>
-                <p>Balance : {{ sum_actual }}</p>
-                <p>Projection : {{ sum_projected }}</p>
-                <v-list>
-                    <v-list-item v-for="op in operations">
-                        <v-list-item-content>
-                          <v-list-item-title>{{ op.item_name }}</v-list-item-title>
+                <v-card-title>
+                    Operations
+                    <v-divider></v-divider>
+                    <v-btn icon elevation="2" :color="ops_validate ? 'warning' : ''" @click="ops_validate = !ops_validate">
+                        <v-icon>mdi-check</v-icon>
+                    </v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <p>Balance : {{ sum_actual }}</p>
+                    <p>Projection : {{ sum_projected }}</p>
+                    <v-text-field
+                        dense
+                        filled
+                        rounded
+                        solo
+                        v-model="ops_filter"
+                        prepend-inner-icon="mdi-filter"
+                    ></v-text-field>
+                    <v-list>
+                        <v-list-item v-for="op in showed_ops" :v-key="op.op_id">
+                            <v-list-item-content>
+                                <v-list-item-title>{{ op.item_name }}</v-list-item-title>
 
-                          <v-list-item-subtitle>{{ Math.abs(op.quantity) }} à {{ op.item_price }}k/u</v-list-item-subtitle>
-                          <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        <v-list-item-action>
-                          <v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
-                          <v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
-                          <v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
-                        </v-list-item-action>
-                    </v-list-item>
-                </v-list>
-              </v-card-text>
+                                <v-list-item-subtitle>{{ Math.abs(op.quantity) }} à {{ op.item_price }}k/u</v-list-item-subtitle>
+                                <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
+                            </v-list-item-content>
+                            <v-list-item-action>
+                                <v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
+                                <v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
+                                <v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
+                            </v-list-item-action>
+                        </v-list-item>
+                    </v-list>
+                </v-card-text>
             </v-card>
           </v-col>
           <!-- crafts -->
@@ -134,7 +150,13 @@
             </v-card>
             <!-- inventory -->
             <v-card>
-                <v-card-title>Inventory</v-card-title>
+                <v-card-title>
+                    Inventory
+                    <v-divider></v-divider>
+                    <v-btn icon elevation="2" @click="floorInventory()">
+                        <v-icon>mdi-home-floor-0</v-icon>
+                    </v-btn>
+                </v-card-title>
                 <v-card-subtitle>computed value of resources {{inventory_value}}k sorted by {{inventory_sort}}</v-card-subtitle>
                 <v-card-text>
                     <v-btn-toggle v-model="inventory_sort_toggle">
@@ -166,10 +188,21 @@
                             <v-icon>mdi-sort-descending</v-icon>
                         </v-btn>
                     </v-btn-toggle>
+                    <v-text-field
+                        dense
+                        filled
+                        v-model="inventory_filter"
+                        prepend-inner-icon="mdi-filter"
+                    ></v-text-field>
                     <v-list>
                         <v-list-item v-for="item in sorted_inventory">
+                            <v-list-item-avatar>
+                                <v-chip>{{ item.quantity }}</v-chip>
+                            </v-list-item-avatar>
+
                             <v-list-item-content>
-                                <v-list-item-title><v-chip>{{ item.quantity }}</v-chip> {{ item.item_name }}</v-list-item-title>
+                                <v-list-item-title>{{ item.item_name }}</v-list-item-title>
+                                <v-list-item-subtitle>{{ item.item_price }}k/u</v-list-item-subtitle>
                             </v-list-item-content>
                             
                             <v-list-item-action>
@@ -343,8 +376,11 @@
             soldPrice: null,
             soldNote: null,
             operations: [],
+            ops_filter: "", 
+            ops_validate: false,
             inventory_sort: null,
             inventory_sort_toggle: null,
+            inventory_filter: "",
         };
       },
       mounted: function() {
@@ -354,6 +390,11 @@
         this.getCrafts();
       },
       methods: {
+        floorInventory: function() {
+            axios.post(SOURCE+"api/inventory/resetZeros", {})
+                .then((response) => this.getInventory())
+                .catch((error) => this.handleError(error));
+        },
         buyItem: function(item) {
             this.buyWindow = true;
             this.boughtItem = item;
@@ -524,20 +565,29 @@
         inventory_value() {
             return this.inventory.reduce((acc, resource) => acc + resource.item_price * resource.quantity, 0)
         },
+        filtered_ops() {
+            return this.operations.filter((op) => op.item_name.toLowerCase().indexOf(this.ops_filter.toLowerCase()) != -1);
+        },
+        showed_ops() {
+            return this.filtered_ops.filter((op) => (!op.sell_confirmed && op.buy_or_sell=="sell" && this.ops_validate) ||  !this.ops_validate)
+        },
+        filtered_inventory() {
+            return this.inventory.filter((resource) => resource.item_name.toLowerCase().indexOf(this.inventory_filter.toLowerCase()) != -1);
+        },
         sorted_inventory() {
             var descending = this.inventory_sort && this.inventory_sort[0] == "-";
             var key = this.inventory_sort ? this.inventory_sort.replace('-', '') : null;
-            var res = this.inventory;
-            console.log("sorting by " + key + " descending: " + descending);
+            var res = this.filtered_inventory;
+            console.debug("sorting by " + key + " descending: " + descending);
             if (key) {
-                res = this.inventory.sort((a, b) => (a[key] > b[key]) ? 1 : -1);
+                res = this.filtered_inventory.sort((a, b) => (a[key] > b[key]) ? 1 : -1);
                 if (descending) {
                     res.reverse();
                 }
             }
-            console.log(res)
-            return res
-        }
+            console.debug(res);
+            return res;
+        },
       }
     })
   </script>

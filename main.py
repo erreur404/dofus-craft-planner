@@ -165,6 +165,13 @@ def edit_price():
   persistance.set_price(data.get_by_id(payload["id"]), int(payload["price"]))
   return jsonify(persistance.inventory.to_dict(orient="records"))
 
+@app.route("/api/inventory/resetZeros", methods=['POST'])
+def reset_zeros():
+    logging.debug("flooring the inventory")
+    logging.debug("\n" + str(persistance.inventory[persistance.inventory.quantity < 0]))
+    persistance.inventory.quantity = persistance.inventory.apply(lambda row: max(0, row["quantity"]), axis=1)
+    return "ok"
+
 @app.route("/api/save", methods=['POST'])
 def force_save():
   persistance.save()
