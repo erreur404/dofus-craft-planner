@@ -39,14 +39,14 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller -F -w -n dofus-craft-planner --add-data="data:." --add-data="static:." --add-data="README.txt:." --add-data="LICENSE:." main.py &&
+                pyinstaller -F -w -n dofus-craft-planner --add-data="data:data" --add-data="static:static" --add-data="README.txt:." --add-data="LICENSE:." main.py &&
                 cd dist/ &&
                 zip -r9 dofus-craft-planner dofus-craft-planner.app/
             OUT_FILE_NAME: dofus-craft-planner.zip
             ASSET_MIME: application/zip
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: pyinstaller -F -w -n dofus-craft-planner --add-data="data;." --add-data="static;." --add-data="README.txt;." --add-data="LICENSE;." main.py
+            CMD_BUILD: pyinstaller -F -w -n dofus-craft-planner --add-data="data;data" --add-data="static;static" --add-data="README.txt;." --add-data="LICENSE;." main.py
             OUT_FILE_NAME: dofus-craft-planner.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
