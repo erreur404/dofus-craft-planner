@@ -1,5 +1,7 @@
 import logging
 import json
+import pkgutil
+
 
 class CATEGORIES:
   weapons="weapons"
@@ -10,11 +12,11 @@ class CATEGORIES:
 loaded = None
 
 def openJSONdb():
-  global loaded
-  if not loaded:
-    with open("data/dofus.fr.json") as db:
-      loaded = json.load(db)
-  return loaded
+    global loaded
+    if not loaded:
+        with open("data/dofus.fr.json") as db:
+            loaded = json.load(db)
+    return loaded
 
 def get_category(cat):
   return openJSONdb()[cat]

@@ -4,7 +4,8 @@ from flask import Flask
 from flask import render_template, request, send_from_directory, jsonify
 from flaskwebgui import FlaskUI # import FlaskUI
 
-from os import getcwd
+from os import getcwd, system
+import sys
 from pathlib import Path
 
 from persistance import Persistance
@@ -174,16 +175,28 @@ def reset_zeros():
 
 @app.route("/api/save", methods=['POST'])
 def force_save():
-  persistance.save()
-  return "saved"
+    persistance.save()
+    return "saved"
 
 @app.route('/static/<path:path>')
 def send_static(path):
     return send_from_directory(static, path)
 
+def open_default_browser():
+    p = sys.platform
+    logging.info(f"you are running on {p}")
 
+    if p.startswith("win32"):
+        system('explorer "http://localhost:5648"')
+    elif p.startswith("darwin"):
+        system('open http://localhost:5648')
+    elif p.startswith("linux"):
+        system('sensible-browser http://localhost:5648')
 
 if __name__ == "__main__":
+    logging.info("starting default browser")
+    open_default_browser()
     logging.info(f"starting app at {getcwd()}")
-    #  app.run(debug=True)  # for debug
-    ui.run()
+    app.run(debug=True, port=5648)  # for debug
+
+    #  ui.run()
