@@ -5,7 +5,7 @@ from math import ceil
 from os.path import exists
 
 
-DB_FILE = "db.xlsx"
+DB_FILE = "dofus-craft-planner-save.xlsx"
 OPERATIONS_SHEET = "operations"
 INVENTORY_SHEET = "inventory"
 CRAFT_SHEET = "crafts"
