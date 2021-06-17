@@ -1,8 +1,17 @@
 import logging
 import json
-import pkgutil
+import os
+import sys
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
+    return os.path.join(base_path, relative_path)
 class CATEGORIES:
   weapons="weapons"
   equipments="equipments"
@@ -14,7 +23,7 @@ loaded = None
 def openJSONdb():
     global loaded
     if not loaded:
-        with open("data/dofus.fr.json") as db:
+        with open(resource_path("data/dofus.fr.json")) as db:
             loaded = json.load(db)
     return loaded
 
