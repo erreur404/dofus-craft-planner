@@ -70,6 +70,23 @@ class Persistance:
             "quantity": int(quantity),
             "crafted": 0,
         }, ignore_index=True)
+
+    def craft_df_of(self, item, quantity, crafted):
+        df = pd.DataFrame(columns=[
+                "item_name",
+                "item_url",
+                "item_id",
+                "quantity",
+                "crafted",
+        ])
+        df = df.append({
+            "item_name": item["name"],
+            "item_url": item["url"],
+            "item_id": item["id"],
+            "quantity": quantity,
+            "crafted": crafted,
+        }, ignore_index=True)
+        return df
     
     def craft_one(self, item, ingredients):
         self.crafts.loc[self.crafts.item_id==item["id"], "crafted"] += 1

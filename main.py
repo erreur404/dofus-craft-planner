@@ -121,7 +121,7 @@ def delete_craft(id):
 def do_craft(id):
     item = data.get_by_id(id)
     logging.info(f"do one craft {item['name']}")
-    ingredients = _get_crafts(persistance.crafts[persistance.crafts.item_id == int(id)])
+    ingredients = _get_crafts(persistance.craft_df_of(item, 1, 0))
     logging.info(ingredients)
     ingredients = ingredients["total"]
     persistance.craft_one(item, ingredients)
