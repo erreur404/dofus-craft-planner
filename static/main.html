@@ -117,34 +117,23 @@
                 <v-card-title>Crafts</v-card-title>
                 <v-card-text>
                 <v-card>
-                    <v-card-title>Resource summup</v-card-title>
-                    <v-card-text>
-                        Total to buy: {{ sum_resources_to_buy }}k
-                        <ul>
-                            <li v-for="resource in crafts.total"  :v-key="resource.item.id" @click="market_search = resource.item.name">
-                                {{resource.owned}}/{{resource.needed}} {{resource.item.name}} - {{resource.item_price}}k/u --> buy cost : {{resource.buy_cost}}k
-                            </li>
-                        </ul>
-                    <v-card-text>
-                </v-card>
-                <v-card v-for="craft in crafts.crafts" :v-key="craft.item.id">
-                    <v-card-title>{{craft.item.name}}
-                        <v-divider></v-divider>
-                        <v-btn icon color="accent" @click="craftDone(craft)" v-if="craft.crafted < craft.quantity">
-                            <v-icon>mdi-wrench</v-icon>
+                    <v-card-title>
+                        <v-btn icon @click="show_summup = !show_summup">
+                            <v-icon v-if="show_summup">mdi-unfold-less-horizontal</v-icon>
+                            <v-icon v-if="!show_summup">mdi-unfold-more-horizontal</v-icon>
                         </v-btn>
-                        <v-btn icon color="accent" @click="removeCraft(craft)">
-                            <v-icon>mdi-delete</v-icon>
-                        </v-btn>
+                        Resource summup
                     </v-card-title>
-                    <v-card-subtitle>{{craft.item.type}} lvl {{craft.item.level}} - {{craft.crafted}}/{{craft.quantity}} units à {{craft.item_price}}k/u - total {{ craft.quantity * craft.item_price }}k - resources value {{craft.resources_value}}k - buy resources {{craft.buy_price}}k</v-card-subtitle>
-                    <v-card-text>
-                        <ul>
-                            <li v-for="ingredient in craft.ingredients" :v-key="ingredient.item_id" @click="market_search = ingredient.item_name">
-                                {{ingredient.owned}}/{{ingredient.needed}} {{ingredient.item_name}} - {{ingredient.item_price}}k/u --> {{ingredient.set_price}}k
-                            </li>
-                        </ul>
-                    <v-card-text>
+                    <v-expand-transition>
+                        <v-card-text v-show="show_summup">
+                            Total to buy: {{ sum_resources_to_buy }}k
+                            <ul>
+                                <li v-for="resource in crafts.total"  :v-key="resource.item.id" @click="market_search = resource.item.name">
+                                    {{resource.owned}}/{{resource.needed}} {{resource.item.name}} - {{resource.item_price}}k/u --> buy cost : {{resource.buy_cost}}k
+                                </li>
+                            </ul>
+                        <v-card-text>
+                    </v-expand-transition>
                 </v-card>
                 </v-card-text>
             </v-card>
@@ -373,6 +362,7 @@
             market_search: "",
             searchable: [],
             crafts: {crafts:[], total: []},
+            show_summup: true,
             inventory: [],
             buyWindow: false,
             boughtItem: null,
