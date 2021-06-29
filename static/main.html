@@ -135,8 +135,13 @@
                         <v-card-text>
                     </v-expand-transition>
                 </v-card>
-                <v-card-collapsable v-for="craft in crafts.crafts" :craft="craft" :v-key="craft.item.id">
-                    
+                <v-card-collapsable
+                    v-for="craft in crafts.crafts"
+                    @craft="craftDone(craft)"
+                    @delete="removeCraft(craft)"
+                    @filter="market_search=event"
+                    :craft="craft"
+                    :v-key="craft.item.id">
                 </v-card-collapsable>
                 </v-card-text>
             </v-card>
@@ -368,10 +373,10 @@
                 </v-btn>
                 {{craft.item.name}}
                 <v-divider></v-divider>
-                <v-btn icon color="accent" @click="craftDone(craft)" v-if="craft.crafted < craft.quantity">
+                <v-btn icon color="accent" @click="$emit('craft')" v-if="craft.crafted < craft.quantity">
                     <v-icon>mdi-wrench</v-icon>
                 </v-btn>
-                <v-btn icon color="accent" @click="removeCraft(craft)">
+                <v-btn icon color="accent" @click="$emit('delete')">
                     <v-icon>mdi-delete</v-icon>
                 </v-btn>
             </v-card-title>
@@ -379,7 +384,7 @@
             <v-expand-transition>
                 <v-card-text v-show="!folded">
                     <ul>
-                        <li v-for="ingredient in craft.ingredients" :v-key="ingredient.item_id" @click="market_search = ingredient.item_name">
+                        <li v-for="ingredient in craft.ingredients" :v-key="ingredient.item_id" @click="$emit('filter', ingredient.item_name)">
                             {{ingredient.owned}}/{{ingredient.needed}} {{ingredient.item_name}} - {{ingredient.item_price}}k/u --> {{ingredient.set_price}}k
                         </li>
                     </ul>
