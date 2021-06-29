@@ -1,3 +1,4 @@
+import time
 import logging
 import uuid
 import pandas as pd
@@ -48,6 +49,7 @@ class Persistance:
                 "item_id",
                 "quantity",
                 "crafted",
+                "last_changed",
             ])
 
     def save(self):
@@ -78,6 +80,7 @@ class Persistance:
                 "item_id",
                 "quantity",
                 "crafted",
+                "last_changed",
         ])
         df = df.append({
             "item_name": item["name"],
@@ -85,6 +88,7 @@ class Persistance:
             "item_id": item["id"],
             "quantity": quantity,
             "crafted": crafted,
+            "last_changed": time.time(),
         }, ignore_index=True)
         return df
     
@@ -155,12 +159,14 @@ class Persistance:
                 "item_id": item["id"],
                 "quantity": 0,
                 "item_price": 0,
+                "last_changed": time.time(),
             }, ignore_index=True)
 
     def set_quantity(self, item, quantity: int):
         id = item["id"]
         self.inventory_initialize_item(item)        
         self.inventory.loc[self.inventory.item_id == id, "quantity"] = quantity
+        self.inventory.loc[self.inventory.item_id==item["id"], "last_changed"] = time.time()
 
     def get_quantity(self, id: str) -> int:
         res = list(self.inventory.loc[self.inventory.item_id == id]["quantity"])
@@ -169,6 +175,7 @@ class Persistance:
     def set_price(self, item, price: int):
         if len(self.inventory[self.inventory.item_id==item["id"]]) == 1:
             self.inventory.loc[self.inventory.item_id==item["id"], "item_price"] = price
+            self.inventory.loc[self.inventory.item_id==item["id"], "last_changed"] = time.time()
         else:
             self.inventory = self.inventory.append({
                 "item_name": item["name"],
@@ -176,6 +183,7 @@ class Persistance:
                 "item_id": item["id"],
                 "quantity": 0,
                 "item_price": price,
+                "last_changed": time.time(),
             }, ignore_index=True)
 
     def get_price(self, id: str) -> int:
