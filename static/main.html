@@ -160,12 +160,20 @@
                 <v-card-subtitle>computed value of resources {{inventory_value}}k sorted by {{inventory_sort}}</v-card-subtitle>
                 <v-card-text>
                     <v-btn-toggle v-model="inventory_sort_toggle">
-                        <v-btn @click="inventory_sort='item_price'">
+                        <v-btn @click="inventory_sort='last_changed'" v-if="reverseSort">
+                            <v-icon>mdi-sort-clock-ascending</v-icon>
+                        </v-btn>
+
+                        <v-btn @click="inventory_sort='-last_changed'" v-if="!reverseSort">
+                            <v-icon>mdi-sort-clock-descending</v-icon>
+                        </v-btn>
+                        
+                        <v-btn @click="inventory_sort='item_price'" v-if="reverseSort">
                             <v-icon>mdi-tag</v-icon>
                             <v-icon>mdi-sort-ascending</v-icon>
                         </v-btn>
 
-                        <v-btn @click="inventory_sort='-item_price'">
+                        <v-btn @click="inventory_sort='-item_price'" v-if="!reverseSort">
                             <v-icon>mdi-tag</v-icon>
                             <v-icon>mdi-sort-descending</v-icon>
                         </v-btn>
@@ -178,12 +186,12 @@
                             <v-icon>mdi-sort-alphabetical-descending</v-icon>
                         </v-btn>
 
-                        <v-btn @click="inventory_sort='quantity'">
+                        <v-btn @click="inventory_sort='quantity'" v-if="reverseSort">
                             <v-icon>mdi-plus-box-multiple</v-icon>
                             <v-icon>mdi-sort-ascending</v-icon>
                         </v-btn>
 
-                        <v-btn @click="inventory_sort='-quantity'">
+                        <v-btn @click="inventory_sort='-quantity'" v-if="!reverseSort">
                             <v-icon>mdi-plus-box-multiple</v-icon>
                             <v-icon>mdi-sort-descending</v-icon>
                         </v-btn>
@@ -539,6 +547,9 @@
         },
       },
       computed: {
+        reverseSort() {
+            return this.inventory_sort && this.inventory_sort.indexOf('-') != -1
+        },
         searchResult() {
             if (this.market_search.length > 2) {
                 return this.searchable.filter((item) => item.name.toLowerCase().indexOf(this.market_search.toLowerCase()) != -1)
