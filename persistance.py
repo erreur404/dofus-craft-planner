@@ -195,6 +195,8 @@ class Persistance:
         id = item["id"]
         self.inventory_initialize_item(item)
         self.inventory.loc[self.inventory.item_id == id, "quantity"] += quantity
+        self.inventory.loc[self.inventory.item_id==item["id"], "last_changed"] = time.time()
+
 
 
 if __name__ == "__main__":
