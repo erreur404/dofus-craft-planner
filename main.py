@@ -150,6 +150,11 @@ def confirm_operations(id):
     persistance.operations.loc[persistance.operations.op_id == id, "sell_confirmed"] = True
     return "confirmed"
 
+@app.route("/api/operations/<id>/delete", methods=["POST"])
+def delete_operations(id):
+    persistance.operations = persistance.operations[persistance.operations.op_id != id]
+    return "deleted"
+
 @app.route("/api/inventory")
 def get_inventory():
   return jsonify(persistance.inventory.to_dict(orient="records"))

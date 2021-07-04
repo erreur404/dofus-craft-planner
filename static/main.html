@@ -81,6 +81,9 @@
                     <v-btn icon elevation="2" :color="ops_validate ? 'warning' : ''" @click="ops_validate = !ops_validate">
                         <v-icon>mdi-check</v-icon>
                     </v-btn>
+                    <v-btn icon elevation="2" :color="ops_delete ? 'warning' : ''" @click="ops_delete = !ops_delete">
+                        <v-icon>mdi-trash-can</v-icon>
+                    </v-btn>
                 </v-card-title>
                 <v-card-text>
                     <p>Balance : {{ sum_actual }}</p>
@@ -102,17 +105,20 @@
                                 <v-list-item-subtitle>{{ op.item_note }}</v-list-item-subtitle>
                             </v-list-item-content>
                             <v-list-item-action>
-                                <v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
-                                <v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
-                                <v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
+                                <v-row>
+                                    <v-chip v-if="op.buy_or_sell == 'buy'" color="error">{{-op.item_price*op.quantity}}</v-chip>
+                                    <v-chip v-if="op.buy_or_sell == 'sell' && op.sell_confirmed" color="success">{{-op.item_price*op.quantity}}</v-chip>
+                                    <v-chip v-if="op.buy_or_sell == 'sell' && !op.sell_confirmed" color="light-grey" @click="confirmSell(op)">{{-op.item_price*op.quantity}}</v-chip>
+                                    <v-btn icon v-if="ops_delete" color="error" @click="deleteOp(op)"><v-icon>mdi-trash-can</v-icon></v-btn>
+                                </v-row>
                             </v-list-item-action>
                         </v-list-item>
                     </v-list>
                 </v-card-text>
             </v-card>
           </v-col>
-          <!-- crafts -->
           <v-col cols="12" md="6">
+            <!-- crafts -->
             <v-card>
                 <v-card-title>Crafts</v-card-title>
                 <v-card-text>
@@ -421,6 +427,7 @@
             operations: [],
             ops_filter: "", 
             ops_validate: false,
+            ops_delete: false,
             inventory_sort: null,
             inventory_sort_toggle: null,
             inventory_filter: "",
@@ -555,6 +562,11 @@
         confirmSell: function(op) {
             axios.post(SOURCE+"api/operations/" + op.op_id + "/confirm", {})
                 .then((response) => op.sell_confirmed=true)
+                .catch((error) => this.handleError(error))
+        },
+        deleteOp: function(op) {
+            axios.post(SOURCE+"api/operations/" + op.op_id + "/delete", {})
+                .then((response) => this.operations = this.operations.filter((operation) => operation.op_id != op.op_id))
                 .catch((error) => this.handleError(error))
         },
         triggerSave: function() {
