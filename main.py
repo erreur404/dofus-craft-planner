@@ -4,7 +4,7 @@ from flask import Flask
 from flask import render_template, request, send_from_directory, jsonify
 from flaskwebgui import FlaskUI # import FlaskUI
 
-from os import getcwd, system
+from os import getcwd, system, popen
 import sys
 from pathlib import Path
 
@@ -182,6 +182,12 @@ def reset_zeros():
 def force_save():
     persistance.save()
     return "saved"
+
+@app.route("/version", methods=["GET"])
+def get_version():
+    git_status = popen("git status")
+    git_log = popen("git log")
+    return (git_status.read() + "\n\n" + git_log.read()).replace('<', '[').replace('>', ']').replace('\n', '<br/>')
 
 @app.route('/static/<path:path>')
 def send_static(path):
