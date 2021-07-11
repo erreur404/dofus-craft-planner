@@ -110,6 +110,10 @@ class Persistance:
         self.item_operation("sell", item, price, quantity, note)
 
     def item_operation(self, op, item, price, quantity, note = ""):
+        # adds or removes the items from the inventory
+        self.add_quantity(item, quantity)
+
+        # creates the operation object
         price = abs(price)
         quantity = abs(quantity)
         if op == "sell":
@@ -139,17 +143,9 @@ class Persistance:
             "quantity": quantity,
             "op_id": str(uuid.uuid4()),
         }, ignore_index=True)
-        if len(self.inventory[self.inventory.item_id==item["id"]]) == 1:
-            self.inventory.loc[self.inventory.item_id==item["id"], "quantity"] += quantity
-            self.inventory.loc[self.inventory.item_id==item["id"], "item_price"] = pricePerUnit
-        else:
-            self.inventory = self.inventory.append({
-                "item_name": item["name"],
-                "item_url": item["url"],
-                "item_id": item["id"],
-                "quantity": quantity,
-                "item_price": pricePerUnit,
-            }, ignore_index=True)
+        
+        # sets the calculated price of the items
+        self.set_price(item, pricePerUnit)
 
     def inventory_initialize_item(self, item):
         if len(self.inventory[self.inventory.item_id==item["id"]]) == 0:
