@@ -136,21 +136,21 @@ def buy_items():
     payload = request.json
     item = data.get_by_id(payload["id"])
     persistance.buy_item(item, int(payload["price"]), int(payload["quantity"]))
-    return get_inventory()
+    return "bought"
 
 @app.route("/api/operations/sell", methods=['POST'])
 def sell_items():
     payload = request.json
     item = data.get_by_id(payload["id"])
     persistance.sell_item(item, int(payload["price"]), int(payload["quantity"]), payload["note"])
-    return get_inventory()
+    return "sold"
 
 @app.route("/api/operations/<id>/confirm", methods=["POST"])
 def confirm_operations(id):
     persistance.operations.loc[persistance.operations.op_id == id, "sell_confirmed"] = True
     return "confirmed"
 
-@app.route("/api/operations/<id>/delete", methods=["POST"])
+@app.route("/api/operations/<id>", methods=["DELETE"])
 def delete_operations(id):
     persistance.operations = persistance.operations[persistance.operations.op_id != id]
     return "deleted"
@@ -169,14 +169,14 @@ def edit_inventory():
 def edit_price():
   payload = request.json
   persistance.set_price(data.get_by_id(payload["id"]), int(payload["price"]))
-  return jsonify(persistance.inventory.to_dict(orient="records"))
+  return "edited"
 
 @app.route("/api/inventory/resetZeros", methods=['POST'])
 def reset_zeros():
     logging.debug("flooring the inventory")
     logging.debug("\n" + str(persistance.inventory[persistance.inventory.quantity < 0]))
     persistance.inventory.quantity = persistance.inventory.apply(lambda row: max(0, row["quantity"]), axis=1)
-    return "ok"
+    return "reset"
 
 @app.route("/api/save", methods=['POST'])
 def force_save():

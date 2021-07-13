@@ -565,7 +565,7 @@
                 .catch((error) => this.handleError(error))
         },
         deleteOp: function(op) {
-            axios.post(SOURCE+"api/operations/" + op.op_id + "/delete", {})
+            axios.delete(SOURCE+"api/operations/" + op.op_id, {})
                 .then((response) => this.operations = this.operations.filter((operation) => operation.op_id != op.op_id))
                 .catch((error) => this.handleError(error))
         },
