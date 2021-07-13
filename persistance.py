@@ -111,14 +111,15 @@ class Persistance:
 
     def item_operation(self, op, item, price, quantity, note = ""):
         # adds or removes the items from the inventory
-        self.add_quantity(item, quantity)
+        if op == "sell":
+            self.add_quantity(item, -quantity)
+        else:
+            self.add_quantity(item, quantity)
 
         # creates the operation object
         price = abs(price)
         quantity = abs(quantity)
         if op == "sell":
-            price = -price
-            quantity = -quantity
             # pay tax
             self.operations = self.operations.append({
                 "buy_or_sell": "buy",
@@ -126,8 +127,8 @@ class Persistance:
                 "item_url": "tax",
                 "item_id": "tax",
                 "sell_confirmed": True,
-                "item_price": ceil(abs(int(price))*0.02),
-                "item_note": f"tax for selling { -quantity } { item['name'] } for { -price }k. " + note if note is not None else "",
+                "item_price": ceil(price*0.02),
+                "item_note": f"tax for selling { quantity } { item['name'] } for { price }k. " + (note if note is not None else ""),
                 "quantity": 1,
                 "op_id": str(uuid.uuid4()),
             }, ignore_index=True)
