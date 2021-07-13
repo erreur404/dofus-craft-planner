@@ -120,7 +120,7 @@
           <v-col cols="12" md="6">
             <!-- crafts -->
             <v-card>
-                <v-card-title>Crafts</v-card-title>
+                <v-card-title>Crafts<v-btn icon @click="openRentableCraftsWindow()"><v-icon>mdi-trending-up</v-icon></v-btn></v-card-title>
                 <v-card-text>
                 <v-card>
                     <v-card-title>
@@ -353,6 +353,46 @@
           </v-card>
         </v-dialog>
 
+        <v-dialog
+          v-model="rentableCraftsWindow"
+          width="900"
+        >
+          <v-card>
+            <v-card-title>
+              Crafts suggestion
+            </v-card-title>
+
+            <v-card-text>
+                <v-autocomplete
+                    v-model="filterCraftCategories"
+                    :items="craftable_types"
+                    chips
+                    label="Chips"
+                    multiple
+                    solo
+                ></v-autocomplete>
+
+                <v-data-table
+                    :headers="rentableCraftsHeaders"
+                    :items="rentableCraftsSortable"
+                ></v-data-table>
+            </v-card-text>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                text
+                @click="rentableCraftsWindow = false"
+              >
+                Done
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
       <v-footer app>
         <!-- -->
       </v-footer>
@@ -413,6 +453,18 @@
             market_search: "",
             searchable: [],
             crafts: {crafts:[], total: []},
+            rentableCraftsWindow: false,
+            rentableCrafts: "loading",
+            filterCraftCategories: [],
+            rentableCraftsHeaders: [
+                {text: "Name", value: "name"},
+                {text: "Type", value: "type"},
+                {text: "Level", value:"level"},
+                {text: "Sell price (k/u)", value: "item_price"},
+                {text: "Resources to buy (k)", value: "buy_price"},
+                {text: "Resources' value (k)", value: "resources_value"},
+                {text: "Benefit", value: "raw_benefit"},
+            ],
             show_summup: true,
             inventory: [],
             buyWindow: false,
@@ -524,7 +576,7 @@
                 .catch((error) => this.handleError(error));
         },
         _parse: function(to_parse) {
-            console.debug(to_parse);
+            // console.debug(to_parse);
             if(typeof(to_parse) == typeof("")) {
                 // some browser ont parse the json systematically
                 return JSON.parse(to_parse.replace(/NaN/gm, '""'));
@@ -589,6 +641,13 @@
                 .catch((error) => this.handleError(error))
             }
         },
+        openRentableCraftsWindow: function() {
+            this.rentableCrafts = "loading";
+            this.rentableCraftsWindow = true;
+            axios.get(SOURCE+"api/crafts/rentability")
+                .then((response) => this.rentableCrafts = response.data)
+                .catch((error) => this.handleError(error))
+        },
         handleError: function (error) {
             console.error(error);
         },
@@ -646,6 +705,31 @@
             console.debug(res);
             return res;
         },
+        rentableCraftsSortable() {
+            if (this.rentableCrafts === "loading") {
+                return [];
+            }
+            console.log(this.filterCraftCategories);
+            return this.rentableCrafts.filter(line => {
+                return this.filterCraftCategories.length == 0 || (this.filterCraftCategories.length > 0 && this.filterCraftCategories.indexOf(line.item.type) !== -1);
+            }).map(line => {
+                return {
+                    name: line.item.name,
+                    type: line.item.type,
+                    level: line.item.level,
+                    item_price: line.item_price,
+                    buy_price: line.buy_price,
+                    resources_value: line.resources_value,
+                    raw_benefit: line.item_price - line.resources_value,
+                }
+            });
+        },
+        craftable_types() {
+            if (this.rentableCrafts === "loading") {
+                return [];
+            }
+            return this.rentableCrafts.map(x => x.item.type);
+        }
       }
     })
   </script>

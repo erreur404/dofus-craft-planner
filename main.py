@@ -127,6 +127,24 @@ def do_craft(id):
     persistance.craft_one(item, ingredients)
     return "ok"
 
+@app.route("/api/crafts/rentability", methods=["GET"])
+def computeCraftsPrices():
+    craftable = list(filter(lambda x: "craft" in x and len(x["craft"]) > 0, data.get_all_items()))
+    priced_items = persistance.inventory[persistance.inventory.item_price > 0]
+    priced_items_ids = list(priced_items["item_id"])
+    craftable_with_price = list(filter(lambda x: x["id"] in priced_items_ids, craftable))
+    craft_rentability = list(map(lambda item: _get_crafts(persistance.craft_df_of(item, 1, 0)) , craftable_with_price))
+    print(craft_rentability[0])
+    print(craft_rentability[0]["crafts"])
+    print(craft_rentability[0]["crafts"][0])
+    craft_rentability = list(map(lambda craft: {
+        'item': craft["crafts"][0]["item"],
+        'item_price': round(craft["crafts"][0]["item_price"]),
+        'buy_price': round(craft["crafts"][0]["buy_price"]),
+        'resources_value': round(craft["crafts"][0]["resources_value"]),
+    }, craft_rentability))
+    return jsonify(craft_rentability)
+
 @app.route("/api/operations")
 def get_operations():
     return jsonify(persistance.operations.to_dict(orient="records"))
