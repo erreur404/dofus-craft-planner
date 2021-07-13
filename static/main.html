@@ -238,6 +238,7 @@
       <v-dialog
           v-model="buyWindow"
           width="600"
+          content-class="leftDialog"
       >
           <v-card v-if="boughtItem">
             <v-card-title>
@@ -250,7 +251,8 @@
                         <!--<v-img :src="boughtItem.img"></v-img>-->
                     </v-col>
                     <v-col  cols="12" sm="9">
-                        <v-select :items="[1,10,100]" label="Quantity" v-model="boughtQuantity"></v-select>
+                        <v-text-field v-if="[1,10,100].indexOf(boughtQuantity) == -1" autofocus type="number" label="Quantity" v-model="boughtQuantity"></v-text-field>
+                        <v-select v-else :items="[1,10,100, 42]" label="Quantity" v-model="boughtQuantity"></v-select>
                         <v-text-field autofocus type="number" label="Price" v-model="boughtPrice"></v-text-field>
                     </v-col>
                 </v-row>
@@ -296,7 +298,8 @@
         <v-dialog
           v-model="sellWindow"
           width="600"
-      >
+          content-class="leftDialog"
+        >
           <v-card v-if="soldItem">
             <v-card-title>
               Selling {{ soldItem.name }}
@@ -471,6 +474,7 @@
             boughtItem: null,
             boughtQuantity: 1,
             boughtPrice: null,
+            boughtFreeQtyMode: false,
             sellWindow: false,
             soldItem: null,
             soldQuantity: 1,
@@ -593,7 +597,7 @@
             .then((response) => {
                 this.getInventory();
                 this.getCrafts();
-                        this.getOperations();
+                this.getOperations();
             })
             .catch((error) => this.handleError(error))
         },
@@ -607,7 +611,7 @@
             .then((response) => {
                 this.getInventory();
                 this.getCrafts();
-                        this.getOperations();
+                this.getOperations();
             })
             .catch((error) => this.handleError(error))
         },
@@ -733,5 +737,11 @@
       }
     })
   </script>
+
+  <style>
+    .leftDialog {
+        margin-left: -50%;
+    }
+  </style>
 </body>
 </html>
