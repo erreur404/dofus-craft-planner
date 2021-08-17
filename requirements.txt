@@ -1,5 +1,6 @@
 xlsxwriter
 openpyxl
+xlrd==1.2.0
 pandas
 flaskwebgui
 flask
